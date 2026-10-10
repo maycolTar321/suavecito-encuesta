@@ -1,10 +1,13 @@
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient';
 import { cookies } from 'next/headers';
+import { connection } from 'next/server';
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKhLkLp1wSWgIEuMuU66bfGrbLJuK1A8CAtRnJji56GgS5sCduchjerC3n80Re9lp-/exec";
 
 export default async function AdminDashboardPage() {
+  await connection(); // Opt into dynamic rendering in Next.js 16+
+
   // Check auth one more time just in case
   const authCookie = (await cookies()).get('suavecito_auth');
   if (authCookie?.value !== 'authenticated') {
