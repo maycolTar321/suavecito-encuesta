@@ -7,6 +7,7 @@ import { surveySchema, SurveyFormValues } from "@/lib/validation/survey";
 import { CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Baby, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx-Pj-sHtAInvRrxyneiBVufrUXuauatgLG4dZspSGxKJDmd1SKM7YoAgYhjomJpWT/exec";
 
@@ -45,7 +46,7 @@ export default function EncuestaApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...data, grupo, elegible: isElegible }),
       });
-      setEnviado(true);
+      setEnviado(true); confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 }, colors: ['#9CA986', '#F7F5F0', '#E8EDE1'] });
     } catch (err) {
       console.error(err);
     } finally {
