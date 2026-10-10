@@ -88,7 +88,7 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans text-slate-800">
       
       {/* Estilos para impresión en PDF nativa (Vectores perfectos y texto seleccionable) */}
-      <style dangerouslySetInnerHTML={{__html: \`
+      <style dangerouslySetInnerHTML={{__html: `
         @media print {
           @page { size: A4 portrait; margin: 1cm; }
           body { background: white !important; }
@@ -97,7 +97,7 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
           .recharts-responsive-container { break-inside: avoid; }
           .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
         }
-      \`}} />
+      `}} />
 
       <aside className="hidden md:flex w-full md:w-72 bg-slate-900 text-slate-300 flex-col shadow-2xl z-20 shrink-0 print-hidden">
         <div className="p-6 bg-slate-950 flex items-center gap-3 border-b border-slate-800">
@@ -127,15 +127,15 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
       </aside>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center pb-safe print-hidden">
-        <button onClick={() => setActiveTab('resumen')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('resumen')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <Layout className="w-6 h-6" />
           <span className="text-[10px] font-bold">Inicio</span>
         </button>
-        <button onClick={() => setActiveTab('preguntas')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('preguntas')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <PieChartIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold">Preguntas</span>
         </button>
-        <button onClick={() => setActiveTab('tabla')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('tabla')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <List className="w-6 h-6" />
           <span className="text-[10px] font-bold">Respuestas</span>
         </button>
