@@ -74,36 +74,39 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
 
   const exportToPDF = async () => {
     if (data.length === 0) return alert('No hay datos.');
+    if (!dashboardRef.current) return;
     setIsExporting(true);
     try {
-      const doc = new jsPDF('portrait', 'mm', 'a4');
-      doc.setFontSize(22);
-      doc.text('Reporte Oficial de Investigación SUAVECITO', 20, 20);
-      doc.setFontSize(12);
-      doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 20, 30);
-      doc.text(`Total de participantes válidos: ${totalResponses}`, 20, 40);
+      // Usamos html2canvas para tomar una "foto" de alta calidad del dashboard
+      const canvas = await html2canvas(dashboardRef.current, { 
+        scale: 2, 
+        useCORS: true 
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
       
-      let yPos = 50;
-      for (const q of QUESTIONS) {
-        if (yPos > 260) { doc.addPage(); yPos = 20; }
-        doc.setFontSize(14);
-        doc.setTextColor(59, 130, 246);
-        doc.text(q.label, 20, yPos);
-        yPos += 10;
-        
-        doc.setFontSize(10);
-        doc.setTextColor(0, 0, 0);
-        const group = groupBy(q.id);
-        group.forEach(g => {
-          doc.text(`- ${g.name}: ${g.value} respuestas (${g.percentage}%)`, 25, yPos);
-          yPos += 7;
-        });
-        yPos += 10;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+      
+      // Añadir nuevas páginas si la foto es más larga que una hoja A4
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
-      doc.save('Reporte_Estadistico_Suavecito.pdf');
+      
+      pdf.save(`Dashboard_Suavecito_${activeTab}.pdf`);
     } catch (e) {
       console.error(e);
-      alert('Error generando PDF');
+      alert('Error generando PDF visual');
     } finally {
       setIsExporting(false);
     }
