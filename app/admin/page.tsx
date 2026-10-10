@@ -1,3 +1,4 @@
+export const instant = false;
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient';
 import { cookies } from 'next/headers';
