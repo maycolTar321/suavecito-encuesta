@@ -1,325 +1,330 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import { Download, FileText, LogOut, RefreshCcw, Users, Layout, TrendingUp, Filter, BarChart3, ChevronRight, Activity, Smile } from 'lucide-react';
+import { Download, FileText, LogOut, RefreshCcw, Users, Layout, TrendingUp, Filter, BarChart3, List, PieChart as PieChartIcon, Settings } from 'lucide-react';
 import { logoutAction } from './actions';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import 'jspdf-autotable';
 import Image from 'next/image';
 
-// Colores estilo PowerBI
-const PIE_COLORS = ['#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444', '#6366F1'];
-const BAR_COLOR = '#4F46E5';
+const PIE_COLORS = ['#3B82F6', '#F59E0B', '#10B981', '#8B5CF6', '#EF4444', '#6366F1', '#EC4899', '#14B8A6'];
+
+const QUESTIONS = [
+  { id: 'situacion', label: 'Situación Actual' },
+  { id: 'edad', label: 'Edad' },
+  { id: 'conocimiento_marca', label: 'Conocimiento de la Marca' },
+  { id: 'importancia_opinion', label: 'Importancia de Opiniones' },
+  { id: 'consulta_compra', label: 'Consulta antes de comprar' },
+  { id: 'factor_decision', label: 'Factor principal de Decisión' },
+  { id: 'diseno_favorito', label: 'Diseño Favorito (Estímulo)' },
+  { id: 'interes_compra', label: 'Interés de Compra (1-5)' },
+  { id: 'confianza_publicidad', label: 'Confianza en la Publicidad' },
+  { id: 'influencia_publicidad', label: 'Influencia de la Publicidad (1-5)' },
+  { id: 'elemento_influyente', label: 'Elemento más influyente' },
+  { id: 'probabilidad_consideracion', label: 'Probabilidad de Consideración' },
+  { id: 'cambio_decision', label: 'Cambio de Decisión' },
+  { id: 'tipo_recomendacion', label: 'Tipo de Recomendación preferida' },
+  { id: 'ayuda_confianza', label: 'Qué ayuda a confiar más' }
+];
 
 export default function DashboardClient({ initialData, fetchError }: { initialData: any[], fetchError: string | null }) {
   const [data, setData] = useState(initialData);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [filterDesign, setFilterDesign] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('resumen');
+  const [isExporting, setIsExporting] = useState(false);
+  const dashboardRef = useRef<HTMLDivElement>(null);
 
-  // Filtrado
-  const filteredData = useMemo(() => {
-    if (!filterDesign) return data;
-    return data.filter(d => d.diseno_favorito === filterDesign);
-  }, [data, filterDesign]);
+  const totalResponses = data.length;
 
-  const uniqueDesigns = useMemo(() => Array.from(new Set(data.map(d => d.diseno_favorito).filter(Boolean))), [data]);
-
-  // Funciones de agrupación
+  // Helpers
   const groupBy = (key: string) => {
-    const counts = filteredData.reduce((acc, curr) => {
-      const val = curr[key] || 'N/A';
+    const counts = data.reduce((acc, curr) => {
+      const val = curr[key] || 'Sin Respuesta';
       acc[val] = (acc[val] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    return Object.keys(counts).map(name => ({ name, value: counts[name] })).sort((a, b) => b.value - a.value);
+    return Object.keys(counts).map(name => ({ name, value: counts[name], percentage: ((counts[name]/totalResponses)*100).toFixed(1) })).sort((a, b) => b.value - a.value);
   };
-
-  const disenoData = groupBy('diseno_favorito');
-  const factorData = groupBy('factor_decision');
-  const interesData = groupBy('interes_compra');
-  const situacionData = groupBy('situacion');
-  const edadData = groupBy('edad');
-  const influenciaData = groupBy('influencia_publicidad');
-
-  const totalResponses = filteredData.length;
-  const topDesign = disenoData.length > 0 ? disenoData[0].name : 'N/A';
-  const interesAvg = filteredData.length > 0 
-    ? (filteredData.reduce((sum, curr) => sum + (Number(curr.interes_compra) || 0), 0) / filteredData.length).toFixed(1)
-    : '0';
 
   const exportToExcel = () => {
-    if (filteredData.length === 0) return alert('No hay datos para exportar.');
+    if (data.length === 0) return alert('No hay datos para exportar.');
     
-    // Hoja 1: Base de datos cruda
-    const rawDataWorksheet = XLSX.utils.json_to_sheet(filteredData);
+    // Hoja 1: Resumen
+    const summaryData = QUESTIONS.flatMap(q => {
+      const group = groupBy(q.id);
+      return [
+        { Metrica: \`--- \${q.label.toUpperCase()} ---\`, Valor: '', Porcentaje: '' },
+        ...group.map(g => ({ Metrica: g.name, Valor: g.value, Porcentaje: g.percentage + '%' })),
+        { Metrica: '', Valor: '', Porcentaje: '' }
+      ];
+    });
+    const summaryWorksheet = XLSX.utils.json_to_sheet([{ Metrica: 'Total Respuestas', Valor: totalResponses, Porcentaje: '100%' }, {}, ...summaryData]);
+    summaryWorksheet['!cols'] = [{ wch: 50 }, { wch: 15 }, { wch: 15 }];
     
-    // Hoja 2: Resumen Ejecutivo
-    const summaryData = [
-      { Metrica: 'Total de Respuestas', Valor: totalResponses, Porcentaje: '100%' },
-      { Metrica: '', Valor: '', Porcentaje: '' },
-      { Metrica: '--- RESULTADOS POR DISEÑO ---', Valor: '', Porcentaje: '' },
-      ...disenoData.map(d => ({ Metrica: d.name, Valor: d.value, Porcentaje: ((d.value / totalResponses) * 100).toFixed(2) + '%' })),
-      { Metrica: '', Valor: '', Porcentaje: '' },
-      { Metrica: '--- FACTORES DE DECISIÓN ---', Valor: '', Porcentaje: '' },
-      ...factorData.map(d => ({ Metrica: d.name, Valor: d.value, Porcentaje: ((d.value / totalResponses) * 100).toFixed(2) + '%' }))
-    ];
-    
-    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
-    summaryWorksheet['!cols'] = [{ wch: 40 }, { wch: 15 }, { wch: 15 }];
+    // Hoja 2: Base de datos
+    const rawDataWorksheet = XLSX.utils.json_to_sheet(data);
     
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen Ejecutivo');
-    XLSX.utils.book_append_sheet(workbook, rawDataWorksheet, 'Respuestas Detalladas');
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Resumen Estadistico');
+    XLSX.utils.book_append_sheet(workbook, rawDataWorksheet, 'Base de Datos');
     
-    XLSX.writeFile(workbook, 'Reporte_Empresarial_Suavecito.xlsx');
+    XLSX.writeFile(workbook, 'Reporte_Investigacion_Suavecito.xlsx');
   };
 
-  const exportToPDF = () => {
-    if (filteredData.length === 0) return alert('No hay datos para exportar.');
-    const doc = new jsPDF('landscape');
-    doc.text('Análisis de Investigación - SUAVECITO', 14, 15);
-    const headers = Object.keys(filteredData[0] || {});
-    const rows = filteredData.map(row => headers.map(header => row[header] ? String(row[header]) : ''));
-    (doc as any).autoTable({ head: [headers], body: rows, startY: 20, styles: { fontSize: 7 } });
-    doc.save('suavecito_reporte.pdf');
+  const exportToPDF = async () => {
+    if (data.length === 0) return alert('No hay datos.');
+    setIsExporting(true);
+    try {
+      const doc = new jsPDF('portrait', 'mm', 'a4');
+      doc.setFontSize(22);
+      doc.text('Reporte Oficial de Investigación SUAVECITO', 20, 20);
+      doc.setFontSize(12);
+      doc.text(\`Fecha de generación: \${new Date().toLocaleString()}\`, 20, 30);
+      doc.text(\`Total de participantes válidos: \${totalResponses}\`, 20, 40);
+      
+      let yPos = 50;
+      for (const q of QUESTIONS) {
+        if (yPos > 260) { doc.addPage(); yPos = 20; }
+        doc.setFontSize(14);
+        doc.setTextColor(59, 130, 246); // Blue
+        doc.text(q.label, 20, yPos);
+        yPos += 10;
+        
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        const group = groupBy(q.id);
+        group.forEach(g => {
+          doc.text(\`- \${g.name}: \${g.value} respuestas (\${g.percentage}%)\`, 25, yPos);
+          yPos += 7;
+        });
+        yPos += 10;
+      }
+      doc.save('Reporte_Estadistico_Suavecito.pdf');
+    } catch (e) {
+      console.error(e);
+      alert('Error generando PDF');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (fetchError) return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="bg-white p-8 rounded-3xl shadow-xl border-2 border-rose-100 max-w-lg text-center">
-        <h2 className="text-2xl font-black text-rose-600 mb-4">Error de conexión</h2>
-        <p className="text-gray-700 font-medium mb-6">{fetchError}</p>
-        <button onClick={() => window.location.reload()} className="bg-brand-sage text-white font-bold py-3 px-6 rounded-xl w-full">Reintentar</button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 text-center">
+      <div className="bg-white p-8 rounded-xl shadow border border-red-200">
+        <h2 className="text-xl font-bold text-red-600 mb-2">Error</h2><p>{fetchError}</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#F3F4F6] font-sans">
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans text-slate-800">
       
-      {/* Sidebar estilo PowerBI */}
-      <aside className="w-full md:w-64 bg-[#0F172A] text-white flex flex-col shadow-2xl z-20">
-        <div className="p-6 bg-[#F59E0B] flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-white" />
-          <h2 className="text-xl font-black tracking-tight text-white shadow-sm">Dashboard</h2>
+      {/* SIDEBAR */}
+      <aside className="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 shrink-0">
+        <div className="p-6 bg-slate-950 flex items-center gap-3 border-b border-slate-800">
+          <BarChart3 className="w-6 h-6 text-emerald-400" />
+          <h2 className="text-lg font-bold text-white tracking-tight">Data Research</h2>
         </div>
         
-        <div className="p-6 flex-1 overflow-y-auto">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-            <Filter className="w-4 h-4" /> Filtros Globales
-          </h3>
-          
-          <div className="mb-6 bg-[#1E293B] p-4 rounded-xl border border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-300 mb-3">Diseño Seleccionado</h4>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="filtro-diseno" 
-                  checked={filterDesign === null} 
-                  onChange={() => setFilterDesign(null)} 
-                  className="w-4 h-4 text-amber-500 bg-gray-900 border-gray-600 focus:ring-amber-500" 
-                />
-                <span className="text-sm text-gray-400 group-hover:text-white transition-colors">Todos los diseños</span>
-              </label>
-              {uniqueDesigns.map(d => (
-                <label key={d} className="flex items-center gap-3 cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="filtro-diseno" 
-                    checked={filterDesign === d} 
-                    onChange={() => setFilterDesign(d)} 
-                    className="w-4 h-4 text-amber-500 bg-gray-900 border-gray-600 focus:ring-amber-500" 
-                  />
-                  <span className="text-sm text-gray-400 group-hover:text-white transition-colors">{d}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
+        <nav className="p-4 flex-1 space-y-2">
+          <button onClick={() => setActiveTab('resumen')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'resumen' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+            <Layout className="w-5 h-5" /> Resumen Ejecutivo
+          </button>
+          <button onClick={() => setActiveTab('preguntas')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'preguntas' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+            <PieChartIcon className="w-5 h-5" /> Todas las Preguntas
+          </button>
+          <button onClick={() => setActiveTab('tabla')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'tabla' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+            <List className="w-5 h-5" /> Base de Datos Bruta
+          </button>
+        </nav>
 
-        <div className="p-4 bg-[#0B1120] border-t border-gray-800">
+        <div className="p-4 border-t border-slate-800">
           <form action={logoutAction}>
-            <button className="w-full flex justify-center items-center gap-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 py-3 rounded-lg transition-colors">
+            <button className="w-full flex justify-center items-center gap-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 py-3 rounded-lg transition-colors">
               <LogOut className="w-4 h-4" /> Cerrar Sesión
             </button>
           </form>
         </div>
       </aside>
 
-      {/* Contenido Principal */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto">
-        {/* Header Superior */}
-        <header className="bg-white px-8 py-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-             <Image src="/logo-suavecito.png" alt="SUAVECITO" width={140} height={40} className="object-contain" />
-             <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
-             <h1 className="text-xl font-bold text-indigo-900 hidden sm:block">Análisis Encuesta de Mercado</h1>
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center pb-safe">
+        <button onClick={() => setActiveTab('resumen')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+          <Layout className="w-6 h-6" />
+          <span className="text-[10px] font-bold">Inicio</span>
+        </button>
+        <button onClick={() => setActiveTab('preguntas')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+          <PieChartIcon className="w-6 h-6" />
+          <span className="text-[10px] font-bold">Preguntas</span>
+        </button>
+        <button onClick={() => setActiveTab('tabla')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+          <List className="w-6 h-6" />
+          <span className="text-[10px] font-bold">Respuestas</span>
+        </button>
+        <form action={logoutAction} className="w-full">
+          <button type="submit" className="flex flex-col items-center justify-center w-full py-3 gap-1 text-rose-400 hover:text-rose-600">
+            <LogOut className="w-6 h-6" />
+            <span className="text-[10px] font-bold">Salir</span>
+          </button>
+        </form>
+      </nav>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-24 md:pb-0" ref={dashboardRef}>
+        <header className="bg-white px-4 md:px-8 py-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+             <Image src="/logo-suavecito.png" alt="SUAVECITO" width={100} height={30} className="object-contain md:w-[140px]" />
+             <div className="h-6 w-px bg-slate-300 hidden sm:block"></div>
+             <h1 className="text-lg font-bold text-slate-700 hidden sm:block">Panel de Investigación</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={exportToExcel} className="flex items-center gap-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold py-2 px-4 rounded-lg text-sm transition-colors border border-emerald-200 shadow-sm">
-              <FileText className="w-4 h-4" /> Excel
+            <button onClick={exportToExcel} className="flex items-center justify-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 font-bold p-2 md:py-2 md:px-4 rounded-md text-sm transition-colors shadow-sm">
+              <FileText className="w-4 h-4" /> <span className="hidden md:inline">Excel</span>
             </button>
-            <button onClick={exportToPDF} className="flex items-center gap-2 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold py-2 px-4 rounded-lg text-sm transition-colors border border-rose-200 shadow-sm">
-              <Download className="w-4 h-4" /> PDF
+            <button onClick={exportToPDF} disabled={isExporting} className="flex items-center justify-center gap-2 bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 font-bold p-2 md:py-2 md:px-4 rounded-md text-sm transition-colors shadow-sm">
+              <Download className="w-4 h-4" /> <span className="hidden md:inline">{isExporting ? '...' : 'PDF'}</span>
             </button>
           </div>
         </header>
 
-        <div className="p-6 lg:p-8 space-y-6">
+        <div className="p-4 md:p-6 lg:p-8">
           
-          {/* Tarjetas KPI Superiores (Estilo Analítico) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-sm border-t-4 border-[#3B82F6] p-6 relative overflow-hidden">
-              <Users className="absolute -right-4 -bottom-4 w-24 h-24 text-blue-50 opacity-50" />
-              <p className="text-gray-500 font-bold text-sm uppercase">Total Encuestados</p>
-              <h2 className="text-4xl font-black text-gray-800 mt-2">{totalResponses}</h2>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-sm border-t-4 border-[#F59E0B] p-6 relative overflow-hidden">
-              <Layout className="absolute -right-4 -bottom-4 w-24 h-24 text-amber-50 opacity-50" />
-              <p className="text-gray-500 font-bold text-sm uppercase">Diseño Preferido</p>
-              <h2 className="text-3xl font-black text-gray-800 mt-2 truncate">{topDesign}</h2>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border-t-4 border-[#10B981] p-6 relative overflow-hidden">
-              <TrendingUp className="absolute -right-4 -bottom-4 w-24 h-24 text-emerald-50 opacity-50" />
-              <p className="text-gray-500 font-bold text-sm uppercase">Intención de Compra</p>
-              <h2 className="text-4xl font-black text-gray-800 mt-2">{interesAvg} <span className="text-lg text-gray-400">/ 5</span></h2>
-            </div>
-          </div>
-
-          {/* Grillas de Gráficos (Múltiples para máxima densidad) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Donuts */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-              <h3 className="font-bold text-gray-700 mb-4 flex items-center justify-between">
-                Participación por Diseño
-                <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">{disenoData.length} opciones</span>
-              </h3>
-              <div className="flex-1 min-h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={disenoData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
-                      {disenoData.map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{fontSize: '11px'}} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-              <h3 className="font-bold text-gray-700 mb-4">Factor Clave de Decisión</h3>
-              <div className="flex-1 min-h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={factorData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
-                      {factorData.map((e, i) => <Cell key={i} fill={PIE_COLORS[(i+2) % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{fontSize: '11px'}} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-              <h3 className="font-bold text-gray-700 mb-4">Situación Actual</h3>
-              <div className="flex-1 min-h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={situacionData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
-                      {situacionData.map((e, i) => <Cell key={i} fill={PIE_COLORS[(i+4) % PIE_COLORS.length]} />)}
-                    </Pie>
-                    <RechartsTooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{fontSize: '11px'}} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Gráficos de Barras */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="font-bold text-gray-700 mb-6">Nivel de Interés en Comprar (1 a 5)</h3>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={interesData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={30} tick={{fontSize: 12, fontWeight: 'bold'}} />
-                    <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Bar dataKey="value" fill="#4F46E5" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#6B7280', fontSize: 12, fontWeight: 'bold' }} barSize={30} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <h3 className="font-bold text-gray-700 mb-6">Influencia de la Publicidad (1 a 5)</h3>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={influenciaData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#E5E7EB" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={30} tick={{fontSize: 12, fontWeight: 'bold'}} />
-                    <RechartsTooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                    <Bar dataKey="value" fill="#10B981" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#6B7280', fontSize: 12, fontWeight: 'bold' }} barSize={30} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabla de Datos Crudos */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <h3 className="font-bold text-gray-700 mb-4 flex items-center justify-between">
-              Registro de Respuestas Filtradas
-              <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-semibold">{filteredData.length} registros</span>
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-y border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3">Fecha/Hora</th>
-                    <th className="px-4 py-3">Situación</th>
-                    <th className="px-4 py-3 text-indigo-700">Diseño</th>
-                    <th className="px-4 py-3">Factor Decisión</th>
-                    <th className="px-4 py-3 text-center">Interés (1-5)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.slice().reverse().slice(0, 50).map((row, i) => (
-                    <tr key={i} className="border-b border-gray-100 hover:bg-indigo-50/30 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs">
-                        {new Date(row.timestamp || Date.now()).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-gray-800">{row.situacion || '-'}</td>
-                      <td className="px-4 py-3 font-bold text-indigo-600">{row.diseno_favorito || '-'}</td>
-                      <td className="px-4 py-3 text-gray-600">{row.factor_decision || '-'}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span className="bg-gray-100 px-2 py-1 rounded font-bold text-gray-700">{row.interes_compra || '-'}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filteredData.length > 50 && (
-                <div className="text-center p-4 text-sm text-gray-500 bg-gray-50 border-t border-gray-100">
-                  Mostrando los 50 registros más recientes. Exporta a Excel para ver la lista completa.
+          {/* TAB: RESUMEN */}
+          {activeTab === 'resumen' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Total Muestra</p>
+                  <h2 className="text-3xl font-black text-slate-800 mt-1">{totalResponses}</h2>
                 </div>
-              )}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Diseño Ganador</p>
+                  <h2 className="text-xl font-black text-slate-800 mt-1 truncate">{groupBy('diseno_favorito')[0]?.name || '-'}</h2>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">Última Respuesta</p>
+                  <h2 className="text-sm font-bold text-slate-800 mt-2">{data.length > 0 ? new Date(data[data.length-1].timestamp).toLocaleDateString() : '-'}</h2>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-l-4 border-l-purple-500">
+                  <p className="text-slate-500 font-bold text-xs uppercase tracking-wider">% Completitud</p>
+                  <h2 className="text-3xl font-black text-slate-800 mt-1">100%</h2>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h3 className="font-bold text-slate-800 mb-4">Participación por Diseño (A/B/C)</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={groupBy('diseno_favorito')} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                          {groupBy('diseno_favorito').map((e, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                  <h3 className="font-bold text-slate-800 mb-4">Factor Principal de Decisión</h3>
+                  <div className="h-72">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={groupBy('factor_decision')} layout="vertical" margin={{ left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <XAxis type="number" />
+                        <YAxis dataKey="name" type="category" width={120} tick={{fontSize: 11}} />
+                        <RechartsTooltip />
+                        <Bar dataKey="value" fill="#10B981" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* TAB: PREGUNTAS (TODAS) */}
+          {activeTab === 'preguntas' && (
+            <div className="space-y-8 animate-in fade-in duration-500">
+              <h2 className="text-2xl font-black text-slate-800 mb-6 border-b pb-4">Análisis Pregunta por Pregunta</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {QUESTIONS.map((q, i) => {
+                  const qData = groupBy(q.id);
+                  return (
+                    <div key={q.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="font-bold text-slate-800 text-lg">
+                          <span className="text-emerald-500 mr-2">P{i+1}.</span>{q.label}
+                        </h3>
+                        <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-bold">{qData.length} opciones</span>
+                      </div>
+                      
+                      <div className="flex-1 flex flex-col sm:flex-row gap-6 items-center">
+                        <div className="w-full sm:w-1/2 h-48">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={qData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
+                                {qData.map((e, j) => <Cell key={j} fill={PIE_COLORS[(j + i) % PIE_COLORS.length]} />)}
+                              </Pie>
+                              <RechartsTooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="w-full sm:w-1/2">
+                          <table className="w-full text-xs text-left">
+                            <thead>
+                              <tr className="border-b border-slate-100"><th className="pb-2">Respuesta</th><th className="pb-2 text-right">%</th></tr>
+                            </thead>
+                            <tbody>
+                              {qData.slice(0,5).map((row, idx) => (
+                                <tr key={idx} className="border-b border-slate-50 last:border-0">
+                                  <td className="py-2 text-slate-600 truncate max-w-[120px]" title={row.name}>{row.name}</td>
+                                  <td className="py-2 text-right font-bold text-slate-800">{row.percentage}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: TABLA BRUTA */}
+          {activeTab === 'tabla' && (
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in fade-in duration-500">
+              <h3 className="font-bold text-slate-800 mb-4 text-xl">Base de Datos Completa ({totalResponses} registros)</h3>
+              <div className="overflow-x-auto rounded-lg border border-slate-200">
+                <table className="w-full text-sm text-left whitespace-nowrap">
+                  <thead className="text-xs text-slate-600 uppercase bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-3">Fecha</th>
+                      {QUESTIONS.map(q => <th key={q.id} className="px-4 py-3">{q.label}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.map((row, i) => (
+                      <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
+                        <td className="px-4 py-3 text-xs text-slate-500">{new Date(row.timestamp || Date.now()).toLocaleString()}</td>
+                        {QUESTIONS.map(q => (
+                          <td key={q.id} className="px-4 py-3 text-slate-700 truncate max-w-[200px]" title={row[q.id]}>{row[q.id] || '-'}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
         </div>
       </main>
