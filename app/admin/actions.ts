@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export async function loginAction(formData: FormData) {
+export async function loginAction(prevState: any, formData: FormData) {
   const password = formData.get('password');
   // Simple password check (You should ideally use environment variables for passwords)
   if (password === 'Suavecito2026*') {
