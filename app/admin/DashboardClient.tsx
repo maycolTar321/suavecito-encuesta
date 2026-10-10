@@ -40,7 +40,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
 
   const totalResponses = data.length;
 
-  // Helpers
   const groupBy = (key: string) => {
     const counts = data.reduce((acc, curr) => {
       const val = curr[key] || 'Sin Respuesta';
@@ -53,11 +52,10 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
   const exportToExcel = () => {
     if (data.length === 0) return alert('No hay datos para exportar.');
     
-    // Hoja 1: Resumen
     const summaryData = QUESTIONS.flatMap(q => {
       const group = groupBy(q.id);
       return [
-        { Metrica: \`--- \${q.label.toUpperCase()} ---\`, Valor: '', Porcentaje: '' },
+        { Metrica: `--- ${q.label.toUpperCase()} ---`, Valor: '', Porcentaje: '' },
         ...group.map(g => ({ Metrica: g.name, Valor: g.value, Porcentaje: g.percentage + '%' })),
         { Metrica: '', Valor: '', Porcentaje: '' }
       ];
@@ -65,7 +63,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
     const summaryWorksheet = XLSX.utils.json_to_sheet([{ Metrica: 'Total Respuestas', Valor: totalResponses, Porcentaje: '100%' }, {}, ...summaryData]);
     summaryWorksheet['!cols'] = [{ wch: 50 }, { wch: 15 }, { wch: 15 }];
     
-    // Hoja 2: Base de datos
     const rawDataWorksheet = XLSX.utils.json_to_sheet(data);
     
     const workbook = XLSX.utils.book_new();
@@ -83,14 +80,14 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
       doc.setFontSize(22);
       doc.text('Reporte Oficial de Investigación SUAVECITO', 20, 20);
       doc.setFontSize(12);
-      doc.text(\`Fecha de generación: \${new Date().toLocaleString()}\`, 20, 30);
-      doc.text(\`Total de participantes válidos: \${totalResponses}\`, 20, 40);
+      doc.text(`Fecha de generación: ${new Date().toLocaleString()}`, 20, 30);
+      doc.text(`Total de participantes válidos: ${totalResponses}`, 20, 40);
       
       let yPos = 50;
       for (const q of QUESTIONS) {
         if (yPos > 260) { doc.addPage(); yPos = 20; }
         doc.setFontSize(14);
-        doc.setTextColor(59, 130, 246); // Blue
+        doc.setTextColor(59, 130, 246);
         doc.text(q.label, 20, yPos);
         yPos += 10;
         
@@ -98,7 +95,7 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
         doc.setTextColor(0, 0, 0);
         const group = groupBy(q.id);
         group.forEach(g => {
-          doc.text(\`- \${g.name}: \${g.value} respuestas (\${g.percentage}%)\`, 25, yPos);
+          doc.text(`- ${g.name}: ${g.value} respuestas (${g.percentage}%)`, 25, yPos);
           yPos += 7;
         });
         yPos += 10;
@@ -122,22 +119,20 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans text-slate-800">
-      
-      {/* SIDEBAR */}
-      <aside className="w-full md:w-72 bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-20 shrink-0">
+      <aside className="hidden md:flex w-full md:w-72 bg-slate-900 text-slate-300 flex-col shadow-2xl z-20 shrink-0">
         <div className="p-6 bg-slate-950 flex items-center gap-3 border-b border-slate-800">
           <BarChart3 className="w-6 h-6 text-emerald-400" />
           <h2 className="text-lg font-bold text-white tracking-tight">Data Research</h2>
         </div>
         
         <nav className="p-4 flex-1 space-y-2">
-          <button onClick={() => setActiveTab('resumen')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'resumen' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+          <button onClick={() => setActiveTab('resumen')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'resumen' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}`}>
             <Layout className="w-5 h-5" /> Resumen Ejecutivo
           </button>
-          <button onClick={() => setActiveTab('preguntas')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'preguntas' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+          <button onClick={() => setActiveTab('preguntas')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'preguntas' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}`}>
             <PieChartIcon className="w-5 h-5" /> Todas las Preguntas
           </button>
-          <button onClick={() => setActiveTab('tabla')} className={\`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all \${activeTab === 'tabla' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}\`}>
+          <button onClick={() => setActiveTab('tabla')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeTab === 'tabla' ? 'bg-emerald-500/10 text-emerald-400 font-bold' : 'hover:bg-slate-800'}`}>
             <List className="w-5 h-5" /> Base de Datos Bruta
           </button>
         </nav>
@@ -151,17 +146,16 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
         </div>
       </aside>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center pb-safe">
-        <button onClick={() => setActiveTab('resumen')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('resumen')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <Layout className="w-6 h-6" />
           <span className="text-[10px] font-bold">Inicio</span>
         </button>
-        <button onClick={() => setActiveTab('preguntas')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('preguntas')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <PieChartIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold">Preguntas</span>
         </button>
-        <button onClick={() => setActiveTab('tabla')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
+        <button onClick={() => setActiveTab('tabla')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
           <List className="w-6 h-6" />
           <span className="text-[10px] font-bold">Respuestas</span>
         </button>
@@ -173,7 +167,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
         </form>
       </nav>
 
-      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-24 md:pb-0" ref={dashboardRef}>
         <header className="bg-white px-4 md:px-8 py-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-slate-200">
           <div className="flex items-center gap-3">
@@ -193,7 +186,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
 
         <div className="p-4 md:p-6 lg:p-8">
           
-          {/* TAB: RESUMEN */}
           {activeTab === 'resumen' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -248,7 +240,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
             </div>
           )}
 
-          {/* TAB: PREGUNTAS (TODAS) */}
           {activeTab === 'preguntas' && (
             <div className="space-y-8 animate-in fade-in duration-500">
               <h2 className="text-2xl font-black text-slate-800 mb-6 border-b pb-4">Análisis Pregunta por Pregunta</h2>
@@ -299,7 +290,6 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
             </div>
           )}
 
-          {/* TAB: TABLA BRUTA */}
           {activeTab === 'tabla' && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 animate-in fade-in duration-500">
               <h3 className="font-bold text-slate-800 mb-4 text-xl">Base de Datos Completa ({totalResponses} registros)</h3>
