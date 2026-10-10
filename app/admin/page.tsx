@@ -4,7 +4,7 @@ import DashboardClient from './DashboardClient';
 import { cookies } from 'next/headers';
 import { connection } from 'next/server';
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKhLkLp1wSWgIEuMuU66bfGrbLJuK1A8CAtRnJji56GgS5sCduchjerC3n80Re9lp-/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx-Pj-sHtAInvRrxyneiBVufrUXuauatgLG4dZspSGxKJDmd1SKM7YoAgYhjomJpWT/exec";
 
 export default async function AdminDashboardPage() {
   await connection(); // Opt into dynamic rendering in Next.js 16+

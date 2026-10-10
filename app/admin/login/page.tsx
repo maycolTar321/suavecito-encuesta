@@ -1,11 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { loginAction } from '../actions';
 import Image from 'next/image';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, null);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-brand-light p-6 relative overflow-hidden">
@@ -23,13 +25,22 @@ export default function LoginPage() {
         <form action={formAction} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">Contraseña de acceso</label>
-            <input 
-              type="password" 
-              name="password"
-              placeholder="••••••••" 
-              className="w-full px-5 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-4 focus:ring-brand-sage-light focus:border-brand-sage transition-all text-gray-800"
-              required
-            />
+            <div className="relative">
+              <input 
+                type={showPassword ? "text" : "password"} 
+                name="password"
+                placeholder="••••••••" 
+                className="w-full pl-5 pr-12 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-4 focus:ring-brand-sage-light focus:border-brand-sage transition-all text-gray-800"
+                required
+              />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors p-1"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {state?.error && (

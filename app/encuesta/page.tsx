@@ -8,7 +8,7 @@ import { CheckCircle2, ChevronRight, ChevronLeft, ShieldCheck, Baby, Heart } fro
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKhLkLp1wSWgIEuMuU66bfGrbLJuK1A8CAtRnJji56GgS5sCduchjerC3n80Re9lp-/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx-Pj-sHtAInvRrxyneiBVufrUXuauatgLG4dZspSGxKJDmd1SKM7YoAgYhjomJpWT/exec";
 
 export default function EncuestaApp() {
   const [grupo, setGrupo] = useState<"A" | "B" | null>(null);
