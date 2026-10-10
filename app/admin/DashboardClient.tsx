@@ -72,44 +72,8 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
     XLSX.writeFile(workbook, 'Reporte_Investigacion_Suavecito.xlsx');
   };
 
-  const exportToPDF = async () => {
-    if (data.length === 0) return alert('No hay datos.');
-    if (!dashboardRef.current) return;
-    setIsExporting(true);
-    try {
-      // Usamos html2canvas para tomar una "foto" de alta calidad del dashboard
-      const canvas = await html2canvas(dashboardRef.current, { 
-        scale: 2, 
-        useCORS: true 
-      });
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pageHeight;
-      
-      // Añadir nuevas páginas si la foto es más larga que una hoja A4
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      
-      pdf.save(`Dashboard_Suavecito_${activeTab}.pdf`);
-    } catch (e) {
-      console.error(e);
-      alert('Error generando PDF visual');
-    } finally {
-      setIsExporting(false);
-    }
+  const exportToPDF = () => {
+    window.print();
   };
 
   if (fetchError) return (
@@ -122,7 +86,20 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans text-slate-800">
-      <aside className="hidden md:flex w-full md:w-72 bg-slate-900 text-slate-300 flex-col shadow-2xl z-20 shrink-0">
+      
+      {/* Estilos para impresión en PDF nativa (Vectores perfectos y texto seleccionable) */}
+      <style dangerouslySetInnerHTML={{__html: \`
+        @media print {
+          @page { size: A4 portrait; margin: 1cm; }
+          body { background: white !important; }
+          .print-hidden { display: none !important; }
+          main { height: auto !important; overflow: visible !important; }
+          .recharts-responsive-container { break-inside: avoid; }
+          .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+        }
+      \`}} />
+
+      <aside className="hidden md:flex w-full md:w-72 bg-slate-900 text-slate-300 flex-col shadow-2xl z-20 shrink-0 print-hidden">
         <div className="p-6 bg-slate-950 flex items-center gap-3 border-b border-slate-800">
           <BarChart3 className="w-6 h-6 text-emerald-400" />
           <h2 className="text-lg font-bold text-white tracking-tight">Data Research</h2>
@@ -149,16 +126,16 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center pb-safe">
-        <button onClick={() => setActiveTab('resumen')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex justify-around items-center pb-safe print-hidden">
+        <button onClick={() => setActiveTab('resumen')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'resumen' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
           <Layout className="w-6 h-6" />
           <span className="text-[10px] font-bold">Inicio</span>
         </button>
-        <button onClick={() => setActiveTab('preguntas')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+        <button onClick={() => setActiveTab('preguntas')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'preguntas' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
           <PieChartIcon className="w-6 h-6" />
           <span className="text-[10px] font-bold">Preguntas</span>
         </button>
-        <button onClick={() => setActiveTab('tabla')} className={`flex flex-col items-center justify-center w-full py-3 gap-1 ${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+        <button onClick={() => setActiveTab('tabla')} className={\`flex flex-col items-center justify-center w-full py-3 gap-1 \${activeTab === 'tabla' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}\`}>
           <List className="w-6 h-6" />
           <span className="text-[10px] font-bold">Respuestas</span>
         </button>
@@ -171,7 +148,7 @@ export default function DashboardClient({ initialData, fetchError }: { initialDa
       </nav>
 
       <main className="flex-1 flex flex-col h-screen overflow-y-auto pb-24 md:pb-0" ref={dashboardRef}>
-        <header className="bg-white px-4 md:px-8 py-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-slate-200">
+        <header className="bg-white px-4 md:px-8 py-4 shadow-sm flex justify-between items-center sticky top-0 z-10 border-b border-slate-200 print-hidden">
           <div className="flex items-center gap-3">
              <Image src="/logo-suavecito.png" alt="SUAVECITO" width={100} height={30} className="object-contain md:w-[140px]" />
              <div className="h-6 w-px bg-slate-300 hidden sm:block"></div>
