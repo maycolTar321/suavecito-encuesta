@@ -1,6 +1,5 @@
 const sharp = require('sharp');
 const path = require('path');
-const fs = require('fs');
 
 async function createFlyers() {
   const baseDir = path.join(__dirname, '..', 'public');
@@ -25,34 +24,36 @@ async function createFlyers() {
     .resize(720, 640, { fit: 'cover' })
     .toBuffer();
 
-  // Prepare logo buffer
+  // Prepare SUAVECITO logo buffer
   const logoBuffer = await sharp(logoPath)
     .resize(260, 85, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .toBuffer();
 
-  // --- FLYER 1 ---
+  // --- FLYER A (Marca Ficticia 1: NIDITO - Bs. 120) ---
   const svgOverlay1 = `
   <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-        <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.08"/>
-      </filter>
-    </defs>
     <!-- Background Card -->
-    <rect width="${width}" height="${height}" rx="32" fill="#FDFCFA" stroke="#E5E7EB" stroke-width="2"/>
+    <rect width="${width}" height="${height}" rx="32" fill="#FDFCFA" stroke="#E2E8F0" stroke-width="2"/>
     
-    <!-- Header / Generic Label -->
-    <rect x="40" y="36" width="130" height="36" rx="10" fill="#E2E8F0"/>
-    <text x="105" y="60" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#475569" text-anchor="middle">DISEÑO 1</text>
+    <!-- Top Bar: Fictitious Brand Logo 1 -->
+    <rect x="40" y="32" width="130" height="38" rx="10" fill="#E2E8F0"/>
+    <text x="105" y="57" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#475569" text-anchor="middle">DISEÑO A</text>
     
-    <text x="760" y="60" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#64748B" text-anchor="end" letter-spacing="1">ETIQUETA GENÉRICA</text>
+    <!-- Logo Ficticio: NIDITO BEBÉ -->
+    <g transform="translate(560, 28)">
+      <circle cx="20" cy="22" r="16" fill="#3B82F6"/>
+      <path d="M12 24 Q20 12 28 24" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="20" cy="18" r="4" fill="#FFFFFF"/>
+      <text x="44" y="22" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="#1E3A8A">NIDITO</text>
+      <text x="44" y="34" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#64748B" letter-spacing="1.5">ROPA DE BEBÉ</text>
+    </g>
 
     <!-- Photo Container -->
     <rect x="40" y="92" width="720" height="640" rx="24" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
 
     <!-- Product Title -->
     <text x="40" y="785" font-family="system-ui, sans-serif" font-size="32" font-weight="900" fill="#1E293B">Conjunto Básico de Ropa Tejida</text>
-    <text x="40" y="820" font-family="system-ui, sans-serif" font-size="19" font-weight="500" fill="#64748B">2 prendas: Chambrita tejida y buzo cómodo</text>
+    <text x="40" y="820" font-family="system-ui, sans-serif" font-size="19" font-weight="500" fill="#64748B">2 prendas: Chambrita y buzo</text>
 
     <!-- Price Box -->
     <rect x="40" y="855" width="720" height="96" rx="20" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.5"/>
@@ -62,7 +63,7 @@ async function createFlyers() {
     <!-- Divider -->
     <line x1="40" y1="985" x2="760" y2="985" stroke="#E2E8F0" stroke-width="1.5"/>
 
-    <!-- Section: Características -->
+    <!-- Section: Características (Pocas y breves) -->
     <text x="40" y="1030" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#475569" letter-spacing="1.5">CARACTERÍSTICAS DEL PRODUCTO</text>
 
     <!-- Feature 1 -->
@@ -87,37 +88,43 @@ async function createFlyers() {
     </g>
 
     <!-- Note bottom -->
-    <text x="40" y="1285" font-family="system-ui, sans-serif" font-size="15" font-weight="500" fill="#94A3B8">Presentación básica • 2 piezas tejidas • Sin accesorios</text>
+    <text x="40" y="1285" font-family="system-ui, sans-serif" font-size="15" font-weight="500" fill="#94A3B8">Presentación sencilla • 2 prendas tejidas • Sin accesorios</text>
   </svg>
   `;
 
-  const flyer1 = await sharp(Buffer.from(svgOverlay1))
+  await sharp(Buffer.from(svgOverlay1))
     .composite([
       { input: photo1Buffer, top: 92, left: 40 }
     ])
     .jpeg({ quality: 92 })
     .toFile(path.join(prodDir, 'diseno1.jpg'));
 
-  console.log('Flyer 1 created successfully');
+  console.log('Flyer A created successfully');
 
-  // --- FLYER 2 ---
+  // --- FLYER B (Marca Ficticia 2: TEJIDITOS ECONÓMICOS - Bs. 90) ---
   const svgOverlay2 = `
   <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <!-- Background Card -->
     <rect width="${width}" height="${height}" rx="32" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
     
-    <!-- Header / Generic Label -->
-    <rect x="40" y="36" width="130" height="36" rx="10" fill="#FEF3C7"/>
-    <text x="105" y="60" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#B45309" text-anchor="middle">DISEÑO 2</text>
+    <!-- Top Bar: Fictitious Brand Logo 2 -->
+    <rect x="40" y="32" width="130" height="38" rx="10" fill="#FEF3C7"/>
+    <text x="105" y="57" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#B45309" text-anchor="middle">DISEÑO B</text>
     
-    <text x="760" y="60" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#B45309" text-anchor="end" letter-spacing="1">LÍNEA ECONÓMICA GENÉRICA</text>
+    <!-- Logo Ficticio: LANA EXPRESS / TEJIDITOS -->
+    <g transform="translate(535, 28)">
+      <rect x="0" y="6" width="32" height="32" rx="8" fill="#F59E0B"/>
+      <text x="16" y="28" font-family="system-ui, sans-serif" font-size="16" font-weight="900" fill="#FFFFFF" text-anchor="middle">T</text>
+      <text x="40" y="23" font-family="system-ui, sans-serif" font-size="18" font-weight="900" fill="#B45309">TEJIDITOS</text>
+      <text x="40" y="35" font-family="system-ui, sans-serif" font-size="9" font-weight="bold" fill="#78350F" letter-spacing="1">LÍNEA BÁSICA</text>
+    </g>
 
     <!-- Photo Container -->
     <rect x="40" y="92" width="720" height="640" rx="24" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="1"/>
 
     <!-- Product Title -->
     <text x="40" y="785" font-family="system-ui, sans-serif" font-size="32" font-weight="900" fill="#1E293B">Conjunto de Ropa para Bebé</text>
-    <text x="40" y="820" font-family="system-ui, sans-serif" font-size="19" font-weight="500" fill="#64748B">3 prendas: Chambrita tejida, buzo y gorro</text>
+    <text x="40" y="820" font-family="system-ui, sans-serif" font-size="19" font-weight="500" fill="#64748B">3 prendas: Chambrita, buzo y gorrito</text>
 
     <!-- Price Box -->
     <rect x="40" y="855" width="720" height="96" rx="20" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.5"/>
@@ -148,14 +155,14 @@ async function createFlyers() {
     <g transform="translate(40, 1145)">
       <circle cx="20" cy="18" r="13" fill="#FEF3C7"/>
       <text x="20" y="23" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#B45309" text-anchor="middle">✓</text>
-      <text x="50" y="24" font-family="system-ui, sans-serif" font-size="19" font-weight="600" fill="#1E293B">Gorro incluido</text>
+      <text x="50" y="24" font-family="system-ui, sans-serif" font-size="19" font-weight="600" fill="#1E293B">Gorrito incluido</text>
     </g>
 
     <!-- Feature 4 -->
     <g transform="translate(40, 1195)">
       <circle cx="20" cy="18" r="13" fill="#FEE2E2"/>
       <text x="20" y="23" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#B91C1C" text-anchor="middle">!</text>
-      <text x="50" y="24" font-family="system-ui, sans-serif" font-size="19" font-weight="600" fill="#B91C1C">Material sintético económico</text>
+      <text x="50" y="24" font-family="system-ui, sans-serif" font-size="19" font-weight="600" fill="#B91C1C">Tejido sintético básico económico</text>
     </g>
 
     <!-- Feature 5 -->
@@ -167,30 +174,30 @@ async function createFlyers() {
   </svg>
   `;
 
-  const flyer2 = await sharp(Buffer.from(svgOverlay2))
+  await sharp(Buffer.from(svgOverlay2))
     .composite([
       { input: photo2Buffer, top: 92, left: 40 }
     ])
     .jpeg({ quality: 92 })
     .toFile(path.join(prodDir, 'diseno2.jpg'));
 
-  console.log('Flyer 2 created successfully');
+  console.log('Flyer B created successfully');
 
-  // --- FLYER 3 (SUAVECITO) ---
+  // --- FLYER C (SUAVECITO OFICIAL - Bs. 150) ---
   const svgOverlay3 = `
   <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
     <!-- Background Card -->
     <rect width="${width}" height="${height}" rx="32" fill="#FAF8F5" stroke="#9CA986" stroke-width="2.5"/>
     
     <!-- Header Badge -->
-    <rect x="40" y="32" width="130" height="36" rx="10" fill="#E8EDE1"/>
-    <text x="105" y="56" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#4B5E39" text-anchor="middle">DISEÑO 3</text>
+    <rect x="40" y="32" width="130" height="38" rx="10" fill="#E8EDE1"/>
+    <text x="105" y="57" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#4B5E39" text-anchor="middle">DISEÑO C</text>
     
     <!-- Photo Container -->
     <rect x="40" y="104" width="720" height="640" rx="24" fill="#F7F5F0" stroke="#E8EDE1" stroke-width="1.5"/>
 
     <!-- Product Title & Layette Items -->
-    <text x="40" y="785" font-family="system-ui, sans-serif" font-size="32" font-weight="900" fill="#1F2937">Conjunto Completo para Recién Nacido</text>
+    <text x="40" y="785" font-family="system-ui, sans-serif" font-size="32" font-weight="900" fill="#1F2937">Conjunto Completo Coordinado</text>
     
     <!-- Included items pill badges -->
     <g transform="translate(40, 805)">
@@ -218,7 +225,7 @@ async function createFlyers() {
     <!-- Divider -->
     <line x1="40" y1="975" x2="760" y2="975" stroke="#D1D5DB" stroke-width="1.5"/>
 
-    <!-- Section: Características -->
+    <!-- Section: Características Destacadas -->
     <text x="40" y="1010" font-family="system-ui, sans-serif" font-size="15" font-weight="800" fill="#4B5E39" letter-spacing="1.5">CARACTERÍSTICAS DESTACADAS</text>
 
     <!-- Column 1 of Features -->
@@ -226,22 +233,22 @@ async function createFlyers() {
       <g transform="translate(0, 0)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
         <text x="16" y="18" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
-        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Material suave y de calidad</text>
+        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Tejido suave y agradable al tacto</text>
       </g>
       <g transform="translate(0, 42)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
         <text x="16" y="18" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
-        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Tejido delicado para recién nacidos</text>
+        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Diseño coordinado para recién nacido</text>
       </g>
       <g transform="translate(0, 84)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
         <text x="16" y="18" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
-        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Diseño exclusivo</text>
+        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Acabados delicados y confort</text>
       </g>
       <g transform="translate(0, 126)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
         <text x="16" y="18" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
-        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Conjunto completo (5 piezas)</text>
+        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Conjunto completo (5 prendas)</text>
       </g>
     </g>
 
@@ -250,7 +257,7 @@ async function createFlyers() {
       <g transform="translate(0, 0)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
         <text x="16" y="18" font-family="system-ui, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">✓</text>
-        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Acabados cuidados</text>
+        <text x="36" y="19" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#1F2937">Detalles y confección cuidados</text>
       </g>
       <g transform="translate(0, 42)">
         <circle cx="16" cy="14" r="11" fill="#9CA986"/>
@@ -269,7 +276,7 @@ async function createFlyers() {
   </svg>
   `;
 
-  const flyer3 = await sharp(Buffer.from(svgOverlay3))
+  await sharp(Buffer.from(svgOverlay3))
     .composite([
       { input: logoBuffer, top: 12, left: 495 },
       { input: photo3Buffer, top: 104, left: 40 }
@@ -277,9 +284,9 @@ async function createFlyers() {
     .jpeg({ quality: 92 })
     .toFile(path.join(prodDir, 'diseno3.jpg'));
 
-  console.log('Flyer 3 created successfully');
+  console.log('Flyer C created successfully');
 
-  // --- CATALOG COMPOSITE (all 3 side-by-side) ---
+  // --- CATALOG COMPOSITE ---
   const catWidth = 2400;
   const catHeight = 1350;
 

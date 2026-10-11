@@ -29,11 +29,11 @@ interface DisenoEstimulo {
 const DISENOS_ITEMS: DisenoEstimulo[] = [
   {
     id: "DISEÑO 1",
-    badge: "DISEÑO 1",
+    badge: "DISEÑO A",
     brandType: "generic",
-    brandLabel: "ETIQUETA GENÉRICA",
+    brandLabel: "NIDITO BEBÉ (MARCA FICTICIA)",
     title: "Conjunto Básico de Ropa Tejida",
-    subtitle: "2 prendas incluidas",
+    subtitle: "2 prendas: Chambrita y buzo",
     price: "120.00",
     priceLabel: "Precio regular",
     garments: ["Chambrita tejida", "Buzo cómodo"],
@@ -43,23 +43,23 @@ const DISENOS_ITEMS: DisenoEstimulo[] = [
       "Material suave"
     ],
     img: "/images/productos/diseno1.jpg",
-    accentBadge: "bg-slate-100 text-slate-700"
+    accentBadge: "bg-blue-100 text-blue-800"
   },
   {
     id: "DISEÑO 2",
-    badge: "DISEÑO 2",
+    badge: "DISEÑO B",
     brandType: "generic",
-    brandLabel: "LÍNEA ECONÓMICA GENÉRICA",
+    brandLabel: "TEJIDITOS LÍNEA BÁSICA (MARCA FICTICIA)",
     title: "Conjunto de Ropa para Bebé",
-    subtitle: "3 prendas incluidas",
+    subtitle: "3 prendas: Chambrita, buzo y gorrito",
     price: "90.00",
     priceLabel: "Precio económico",
-    garments: ["Chambrita tejida", "Buzo cómodo", "Gorro incluido"],
+    garments: ["Chambrita tejida", "Buzo cómodo", "Gorrito incluido"],
     features: [
       "Chambrita tejida",
       "Buzo cómodo",
-      "Gorro incluido",
-      "Material sintético económico",
+      "Gorrito incluido",
+      "Tejido sintético básico económico",
       "Diseño básico"
     ],
     img: "/images/productos/diseno2.jpg",
@@ -67,20 +67,20 @@ const DISENOS_ITEMS: DisenoEstimulo[] = [
   },
   {
     id: "DISEÑO 3",
-    badge: "DISEÑO 3",
+    badge: "DISEÑO C",
     brandType: "official",
     brandLabel: "SUAVECITO OFICIAL",
-    title: "Conjunto Completo Premium",
+    title: "Conjunto Completo Coordinado",
     subtitle: "Conjunto completo de 5 prendas",
     price: "150.00",
     priceLabel: "Conjunto completo",
     garments: ["Chambrita", "Buzo", "Gorro", "Babero", "Zapatitos tejidos"],
     features: [
-      "Material suave y de calidad",
-      "Tejido delicado para recién nacidos",
-      "Diseño exclusivo",
+      "Tejido suave y agradable al tacto",
+      "Diseño coordinado para recién nacido",
+      "Acabados delicados y confort",
       "Conjunto completo (5 prendas)",
-      "Acabados cuidados",
+      "Detalles y confección cuidados",
       "Presentación ideal para regalo",
       "Fácil cuidado y lavado"
     ],
@@ -214,22 +214,30 @@ export default function EncuestaApp() {
   return (
     <main className="min-h-dvh bg-gray-50 flex flex-col font-sans">
       {/* Top Navbar */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <img src="/logo-suavecito.png" alt="SUAVECITO" className="h-8 w-auto object-contain" />
+      <header className="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 px-4 sm:px-6 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src="/logo-suavecito.png" alt="SUAVECITO" className="h-7 sm:h-8 w-auto object-contain" />
+          <span className="hidden sm:inline-block text-xs font-bold text-gray-400 border-l border-gray-200 pl-3">
+            Estudio Académico
+          </span>
         </div>
-        <div className="text-sm font-bold text-brand-sage bg-brand-sage-light px-3 py-1 rounded-full">
-          {step + 1} / {sections.length}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black text-gray-500">
+            {Math.round(((step + 1) / sections.length) * 100)}%
+          </span>
+          <div className="text-xs sm:text-sm font-black text-brand-sage bg-brand-sage-light px-3 py-1 rounded-full">
+            Sección {step + 1} de {sections.length}
+          </div>
         </div>
       </header>
 
       {/* Progress Bar */}
-      <div className="w-full h-1.5 bg-gray-100">
+      <div className="w-full h-2 bg-gray-100 overflow-hidden">
         <motion.div 
-          className="h-full bg-brand-sage"
+          className="h-full bg-gradient-to-r from-brand-sage to-emerald-500 rounded-r-full"
           initial={{ width: "0%" }}
           animate={{ width: `${((step + 1) / sections.length) * 100}%` }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.35 }}
         />
       </div>
 
