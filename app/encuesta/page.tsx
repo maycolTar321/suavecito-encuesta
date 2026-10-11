@@ -11,6 +11,84 @@ import confetti from "canvas-confetti";
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxx-Pj-sHtAInvRrxyneiBVufrUXuauatgLG4dZspSGxKJDmd1SKM7YoAgYhjomJpWT/exec";
 
+interface DisenoEstimulo {
+  id: "DISEÑO 1" | "DISEÑO 2" | "DISEÑO 3";
+  badge: string;
+  brandType: 'generic' | 'official';
+  brandLabel: string;
+  title: string;
+  subtitle: string;
+  price: string;
+  priceLabel: string;
+  garments: string[];
+  features: string[];
+  img: string;
+  accentBadge: string;
+}
+
+const DISENOS_ITEMS: DisenoEstimulo[] = [
+  {
+    id: "DISEÑO 1",
+    badge: "DISEÑO 1",
+    brandType: "generic",
+    brandLabel: "ETIQUETA GENÉRICA",
+    title: "Conjunto Básico de Ropa Tejida",
+    subtitle: "2 prendas incluidas",
+    price: "120.00",
+    priceLabel: "Precio regular",
+    garments: ["Chambrita tejida", "Buzo cómodo"],
+    features: [
+      "Chambrita tejida",
+      "Buzo cómodo",
+      "Material suave"
+    ],
+    img: "/images/productos/diseno1.jpg",
+    accentBadge: "bg-slate-100 text-slate-700"
+  },
+  {
+    id: "DISEÑO 2",
+    badge: "DISEÑO 2",
+    brandType: "generic",
+    brandLabel: "LÍNEA ECONÓMICA GENÉRICA",
+    title: "Conjunto de Ropa para Bebé",
+    subtitle: "3 prendas incluidas",
+    price: "90.00",
+    priceLabel: "Precio económico",
+    garments: ["Chambrita tejida", "Buzo cómodo", "Gorro incluido"],
+    features: [
+      "Chambrita tejida",
+      "Buzo cómodo",
+      "Gorro incluido",
+      "Material sintético económico",
+      "Diseño básico"
+    ],
+    img: "/images/productos/diseno2.jpg",
+    accentBadge: "bg-amber-100 text-amber-800"
+  },
+  {
+    id: "DISEÑO 3",
+    badge: "DISEÑO 3",
+    brandType: "official",
+    brandLabel: "SUAVECITO OFICIAL",
+    title: "Conjunto Completo Premium",
+    subtitle: "Conjunto completo de 5 prendas",
+    price: "150.00",
+    priceLabel: "Conjunto completo",
+    garments: ["Chambrita", "Buzo", "Gorro", "Babero", "Zapatitos tejidos"],
+    features: [
+      "Material suave y de calidad",
+      "Tejido delicado para recién nacidos",
+      "Diseño exclusivo",
+      "Conjunto completo (5 prendas)",
+      "Acabados cuidados",
+      "Presentación ideal para regalo",
+      "Fácil cuidado y lavado"
+    ],
+    img: "/images/productos/diseno3.jpg",
+    accentBadge: "bg-brand-sage-light text-brand-sage-dark"
+  }
+];
+
 export default function EncuestaApp() {
   const [grupo, setGrupo] = useState<"A" | "B" | null>(null);
   const [enviado, setEnviado] = useState(false);
@@ -19,7 +97,8 @@ export default function EncuestaApp() {
 
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, watch, trigger } = useForm<SurveyFormValues>({
+  const { register, handleSubmit, formState: { errors }, watch, trigger, setValue } = useForm<SurveyFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(surveySchema) as any,
   });
 
@@ -57,7 +136,7 @@ export default function EncuestaApp() {
   const sections = [
     { title: "Contexto", fields: ["situacion", "edad", "conocimiento_marca"] },
     { title: "Preferencias", fields: ["importancia_opinion", "consulta_compra", "factor_decision"] },
-    { title: "Elige tu diseño favorito", fields: ["diseno_favorito"] },
+    { title: "Observa los diseños", fields: ["diseno_favorito"] },
     { title: "Tus Impresiones", fields: ["interes_compra", "confianza_publicidad", "influencia_publicidad", "elemento_influyente", "probabilidad_consideracion"] },
     { title: "Influencia Social", fields: ["cambio_decision", "tipo_recomendacion", "ayuda_confianza"] }
   ];
@@ -155,8 +234,8 @@ export default function EncuestaApp() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 pb-32">
-        <div className="max-w-md mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-32">
+        <div className={`mx-auto transition-all duration-300 ${step === 2 ? 'max-w-6xl w-full' : 'max-w-md w-full'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -184,73 +263,191 @@ export default function EncuestaApp() {
               )}
 
               {step === 2 && (
-                <div className="space-y-6 max-w-6xl mx-auto -mx-4 sm:mx-0">
-                  <div className="text-center mb-10">
-                    <p className="text-brand-sage-dark font-medium mb-2 uppercase tracking-widest text-sm">Observa detenidamente</p>
-                    <h3 className="text-3xl font-black text-gray-900">Comparación de propuestas publicitarias</h3>
-                    {errors.diseno_favorito && <p className="text-rose-500 font-bold mt-4 bg-rose-50 inline-block px-4 py-2 rounded-lg">{errors.diseno_favorito.message}</p>}
+                <div className="space-y-8 w-full">
+                  <div className="text-center max-w-2xl mx-auto">
+                    <span className="inline-block text-xs font-bold tracking-widest text-brand-sage-dark bg-brand-sage-light px-3.5 py-1.5 rounded-full uppercase mb-2">
+                      Estudio comparativo
+                    </span>
+                    <h3 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">
+                      Observa los diseños
+                    </h3>
+                    <p className="text-gray-500 font-medium text-sm sm:text-base mt-2">
+                      Examina detalladamente las tres piezas publicitarias de ropa para recién nacidos, compara sus características y selecciona tu diseño preferido.
+                    </p>
+                    {errors.diseno_favorito && (
+                      <div className="mt-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm font-bold rounded-2xl inline-flex items-center gap-2">
+                        <span>⚠️ Selecciona uno de los tres diseños para continuar</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {[
-                      { id: 'DISEÑO 1', label: 'ESTÍMULO A', img: '/images/productos/diseno1.jpg', desc: 'Solo información del producto' },
-                      { id: 'DISEÑO 2', label: 'ESTÍMULO B', img: '/images/productos/diseno2.jpg', desc: 'Con recomendación de otra persona' },
-                      { id: 'DISEÑO 3', label: 'ESTÍMULO C', img: '/images/productos/diseno3.jpg', desc: 'Otro diseño del producto' },
-                    ].map((diseno) => {
+                  {/* Responsive grid: 1 column on mobile, 3 columns on tablet/desktop */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+                    {DISENOS_ITEMS.map((diseno) => {
                       const isSelected = watch("diseno_favorito") === diseno.id;
+
                       return (
-                        <div key={diseno.id} className={`flex flex-col bg-white rounded-3xl overflow-hidden transition-all duration-300 border-[3px] shadow-sm ${isSelected ? 'border-brand-sage shadow-brand-sage-light shadow-xl' : 'border-gray-100'}`}>
-                          
+                        <div
+                          key={diseno.id}
+                          className={`flex flex-col rounded-3xl overflow-hidden transition-all duration-300 bg-white border-2 shadow-sm relative ${
+                            isSelected
+                              ? 'border-brand-sage ring-4 ring-brand-sage/20 shadow-xl shadow-brand-sage/10 scale-[1.01]'
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          }`}
+                        >
+                          {/* Top Brand Bar */}
+                          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
+                            <span className={`text-xs font-black px-2.5 py-1 rounded-lg tracking-wider ${diseno.accentBadge}`}>
+                              {diseno.badge}
+                            </span>
+                            
+                            {diseno.brandType === 'official' ? (
+                              <div className="flex items-center gap-1.5" title="Logotipo oficial de SUAVECITO">
+                                <img
+                                  src="/logo-suavecito.png"
+                                  alt="SUAVECITO"
+                                  className="h-7 w-auto object-contain"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[11px] font-bold text-gray-400 tracking-wider uppercase">
+                                {diseno.brandLabel}
+                              </span>
+                            )}
+                          </div>
+
                           {/* Image Section */}
-                          <div className="w-full relative bg-gray-50 flex items-start justify-center group">
-                            <img 
-                              src={diseno.img} 
-                              alt={`${diseno.label} - ${diseno.desc}`} 
-                              className="w-full h-auto object-contain"
-                              style={{ display: "block" }} 
+                          <div className="w-full relative bg-neutral-100 flex items-center justify-center group overflow-hidden">
+                            <img
+                              src={diseno.img}
+                              alt={`${diseno.title} - ${diseno.badge}`}
+                              className="w-full h-auto object-contain block select-none"
+                              loading="eager"
                             />
-                            {/* Overlay zoom button on desktop hover */}
-                            <button 
+
+                            {/* Desktop hover zoom overlay */}
+                            <button
                               type="button"
                               onClick={() => setZoomedImage(diseno.img)}
-                              className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="hidden md:flex absolute inset-0 bg-black/40 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px] cursor-pointer"
+                              title="Ver pieza publicitaria en alta resolución"
                             >
-                              <span className="bg-white text-gray-900 font-bold py-3 px-6 rounded-full shadow-lg hover:scale-105 transition-transform">
-                                Ver en grande
+                              <span className="bg-white/95 text-gray-900 font-bold text-sm py-2.5 px-5 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
+                                🔍 Ver pieza completa
                               </span>
                             </button>
-                            {/* Mobile persistent zoom button */}
-                            <button 
+
+                            {/* Mobile button to expand */}
+                            <button
                               type="button"
                               onClick={() => setZoomedImage(diseno.img)}
-                              className="md:hidden absolute bottom-6 right-6 bg-white/90 backdrop-blur text-gray-900 font-bold py-2 px-4 rounded-full shadow-md text-sm border border-gray-200"
+                              className="md:hidden absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-bold py-1.5 px-3 rounded-full shadow-md border border-gray-200 flex items-center gap-1"
                             >
                               🔍 Ampliar
                             </button>
                           </div>
 
-                          {/* Controls Section */}
-                          <div className="p-4 sm:p-6 flex-1 flex flex-col justify-between bg-white">
-                            <div className="text-center mb-4 sm:mb-6">
-                              <h4 className="font-black text-lg sm:text-xl text-gray-900 mb-1 whitespace-nowrap">{diseno.label}</h4>
-                              <p className="text-sm font-medium text-gray-500 line-clamp-2">{diseno.desc}</p>
-                            </div>
-                            
-                            <label className="cursor-pointer w-full mt-auto block">
-                              <input type="radio" value={diseno.id} {...register("diseno_favorito")} className="sr-only" />
-                              <div className={`w-full py-3.5 px-2 text-center rounded-2xl font-bold text-sm sm:text-base transition-all duration-300 flex items-center justify-center gap-2 border-2 ${isSelected ? 'bg-brand-sage text-white border-brand-sage shadow-lg shadow-brand-sage/30' : 'bg-transparent text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300 hover:text-gray-800'}`}>
-                                {isSelected && <CheckCircle2 className="w-5 h-5" />}
-                                {isSelected ? 'SELECCIONADO' : 'SELECCIONAR DISEÑO'}
+                          {/* Card Content & Features */}
+                          <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+                            <div>
+                              {/* Title & Subtitle */}
+                              <div className="mb-4">
+                                <h4 className="font-black text-xl text-gray-900 leading-snug">
+                                  {diseno.title}
+                                </h4>
+                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mt-1">
+                                  {diseno.subtitle}
+                                </p>
                               </div>
-                            </label>
+
+                              {/* Price Highlight */}
+                              <div className="mb-5 p-3.5 rounded-2xl bg-gray-50 border border-gray-100 flex items-baseline justify-between">
+                                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                  {diseno.priceLabel}:
+                                </span>
+                                <span className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                                  Bs. {diseno.price}
+                                </span>
+                              </div>
+
+                              {/* Included Garments Pills */}
+                              <div className="mb-5">
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">
+                                  Prendas incluidas:
+                                </p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {diseno.garments.map((g, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs font-bold px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 border border-gray-200/60"
+                                    >
+                                      {g}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Characteristics Checklist */}
+                              <div className="mb-6">
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2.5">
+                                  Características visibles:
+                                </p>
+                                <ul className="space-y-2 text-sm">
+                                  {diseno.features.map((feat, idx) => {
+                                    const isWarning = feat.includes('sintético');
+                                    return (
+                                      <li key={idx} className="flex items-start gap-2.5 leading-snug">
+                                        <span
+                                          className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                                            isWarning
+                                              ? 'bg-amber-100 text-amber-800'
+                                              : 'bg-emerald-100 text-emerald-700'
+                                          }`}
+                                        >
+                                          {isWarning ? '!' : '✓'}
+                                        </span>
+                                        <span className={`font-medium ${isWarning ? 'text-amber-900 font-semibold' : 'text-gray-700'}`}>
+                                          {feat}
+                                        </span>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            </div>
+
+                            {/* Large Selection Action Button */}
+                            <div className="mt-auto pt-2">
+                              <input
+                                type="radio"
+                                value={diseno.id}
+                                {...register("diseno_favorito")}
+                                className="sr-only"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setValue("diseno_favorito", diseno.id, { shouldValidate: true, shouldDirty: true })}
+                                className={`w-full py-4 px-4 text-center rounded-2xl font-black text-sm sm:text-base transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
+                                  isSelected
+                                    ? 'bg-brand-sage text-white shadow-brand-sage/30 ring-2 ring-brand-sage-dark'
+                                    : 'bg-gray-900 text-white hover:bg-black hover:shadow-md'
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <CheckCircle2 className="w-5 h-5 text-white" />
+                                    <span>DISEÑO SELECCIONADO</span>
+                                  </>
+                                ) : (
+                                  <span>Seleccionar diseño</span>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  
-                  {/* Lógica del Grupo B eliminada de aquí para no interferir con las nuevas tarjetas completas. 
-                      La recomendación ya viene incrustada en el Estímulo B. */}
                 </div>
               )}
 
